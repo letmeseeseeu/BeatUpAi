@@ -14,7 +14,6 @@ static inline void ThrowIfCuda(cudaError_t e, const char* msg) {
     if (e != cudaSuccess) { std::fprintf(stderr, "%s CUDA: %s\n", msg, cudaGetErrorString(e)); std::exit(1); }
 }
 
-// ------------ D3D Pack ------------
 WGCCaptureCuda::D3D11Pack::~D3D11Pack() {
     winrtDevice = nullptr;
     if (context) context->Release();
@@ -40,7 +39,7 @@ WGCCaptureCuda::D3D11Pack WGCCaptureCuda::CreateD3D11() {
     return r;
 }
 
-// ------------ Utils ------------
+
 HWND WGCCaptureCuda::FindWindowByTitleInsensitive(const wchar_t* title) {
     if (!title || !*title) return nullptr;
     std::wstring target = title;
@@ -63,13 +62,13 @@ HWND WGCCaptureCuda::FindWindowByTitleInsensitive(const wchar_t* title) {
     return ctx.exact ? ctx.exact : ctx.partial;
 }
 
-// ------------ WGCCaptureCuda ------------
+
 WGCCaptureCuda::~WGCCaptureCuda() { stop(); destroyTex(); }
 
 bool WGCCaptureCuda::initFromWindowTitle(const wchar_t* title) {
     HWND w = FindWindowByTitleInsensitive(title);
     if (!w) {
-        std::fwprintf(stderr, L"[WGC] ’“≤ªµΩ¥∞ø⁄: %s\n", title);
+        std::fwprintf(stderr, L"[WGC] Êâæ‰∏çÂà∞Á™óÂè£: %s\n", title);
         return false;
     }
     return init(w);
@@ -85,7 +84,7 @@ bool WGCCaptureCuda::init(HWND hwnd) {
     }
     d3d_ = CreateD3D11();
 
-    // Create GraphicsCaptureItem for window
+
     auto interop = winrt::get_activation_factory<GraphicsCaptureItem, IGraphicsCaptureItemInterop>();
     GraphicsCaptureItem item{ nullptr };
     HRESULT hr = interop->CreateForWindow(hwnd_, winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(),
@@ -98,7 +97,7 @@ bool WGCCaptureCuda::init(HWND hwnd) {
     size_ = item_.Size();
     std::printf("[WGC] Capture size: %d x %d\n", size_.Width, size_.Height);
 
-    // Frame pool
+
     framePool_ = Direct3D11CaptureFramePool::CreateFreeThreaded(
         d3d_.winrtDevice, DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, size_);
 
@@ -127,7 +126,7 @@ void WGCCaptureCuda::stop() {
 
 void WGCCaptureCuda::recreateCopyTex(int w, int h) {
     std::lock_guard<std::mutex> lk(mtx_);
-    // unreg cuda first
+
     if (cudaRes_) {
         ThrowIfCuda(cudaGraphicsUnregisterResource(cudaRes_), "cudaGraphicsUnregisterResource");
         cudaRes_ = nullptr;
@@ -140,7 +139,7 @@ void WGCCaptureCuda::recreateCopyTex(int w, int h) {
     d.Usage = D3D11_USAGE_DEFAULT; d.BindFlags = 0; d.CPUAccessFlags = 0; d.MiscFlags = 0;
     ThrowIfFailed(d3d_.device->CreateTexture2D(&d, nullptr, &copyTex_), "CreateTexture2D copyTex_");
 
-    // register for CUDA interop
+
     ThrowIfCuda(cudaGraphicsD3D11RegisterResource(&cudaRes_, copyTex_, cudaGraphicsRegisterFlagsNone),
         "cudaGraphicsD3D11RegisterResource");
 }
@@ -161,7 +160,7 @@ void WGCCaptureCuda::onArrived(Direct3D11CaptureFramePool const& sender) {
     auto frame = sender.TryGetNextFrame();
     if (!frame) return;
 
-    // handle resize
+
     auto cs = frame.ContentSize();
     if (cs.Width != size_.Width || cs.Height != size_.Height) {
         size_ = cs;
@@ -169,7 +168,7 @@ void WGCCaptureCuda::onArrived(Direct3D11CaptureFramePool const& sender) {
         recreateCopyTex(size_.Width, size_.Height);
     }
 
-    // get ID3D11Texture2D from surface
+
     auto surf = frame.Surface();
     winrt::com_ptr<IDirect3DDxgiInterfaceAccess> access;
     try { access = surf.as<IDirect3DDxgiInterfaceAccess>(); }
@@ -179,7 +178,6 @@ void WGCCaptureCuda::onArrived(Direct3D11CaptureFramePool const& sender) {
     if (FAILED(access->GetInterface(winrt::guid_of<ID3D11Texture2D>(), tex.put_void())))
         return;
 
-    // copy to our copyTex_
     {
         std::lock_guard<std::mutex> lk(mtx_);
         if (copyTex_) d3d_.context->CopyResource(copyTex_, tex.get());
@@ -188,7 +186,7 @@ void WGCCaptureCuda::onArrived(Direct3D11CaptureFramePool const& sender) {
     fc_.fetch_add(1, std::memory_order_relaxed);
 }
 
-// ∞—◊Ó–¬÷°øΩµΩ GPU Mat£®BGRA£¨CV_8UC4£©
+// ÊääÊúÄÊñ∞Â∏ßÊã∑Âà∞ GPU MatÔºàBGRAÔºåCV_8UC4Ôºâ
 bool WGCCaptureCuda::blitToGpuBgra(cv::cuda::GpuMat& outBgra, cudaStream_t stream) {
     std::lock_guard<std::mutex> lk(mtx_);
     if (!copyTex_ || !cudaRes_ || !gotFrame_) return false;
@@ -199,7 +197,7 @@ bool WGCCaptureCuda::blitToGpuBgra(cv::cuda::GpuMat& outBgra, cudaStream_t strea
     cudaArray* cuArray = nullptr;
     ThrowIfCuda(cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaRes_, 0, 0),
         "cudaGraphicsSubResourceGetMappedArray");
-    // copy array -> GpuMat
+
     ThrowIfCuda(cudaMemcpy2DFromArrayAsync(
         outBgra.ptr<uchar>(), outBgra.step, cuArray, 0, 0,
         size_.Width * 4, size_.Height, cudaMemcpyDeviceToDevice, stream),
@@ -207,3 +205,4 @@ bool WGCCaptureCuda::blitToGpuBgra(cv::cuda::GpuMat& outBgra, cudaStream_t strea
     ThrowIfCuda(cudaGraphicsUnmapResources(1, &cudaRes_, stream), "cudaGraphicsUnmapResources");
     return true;
 }
+
