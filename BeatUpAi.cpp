@@ -1,9 +1,8 @@
-// ======================= WGC + TensorRT10 + DD (No-Display, CUDA¨CD3D11 Interop, EfficientNMS, FP16-Input, Per-Key Thresholds) =======================
 #define _WIN32_WINNT 0x0A00
 #define WINVER        0x0A00
 #define _CRT_SECURE_NO_WARNINGS
 
-// -------- Windows / DirectX / WinRT --------
+
 #include <windows.h>
 #include <inspectable.h>
 #include <shellscalingapi.h>
@@ -26,7 +25,7 @@
 #include <windows.graphics.capture.interop.h>
 #include <windows.graphics.directx.direct3d11.interop.h>
 
-// -------- CUDA / TensorRT 10 --------
+
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <cuda_fp16.h>
@@ -38,7 +37,7 @@
 #include <NvInferRuntime.h>
 #include <NvInferPlugin.h>
 
-// -------- OpenCV£¨Ö»ÓÃµ½ Rect2f£©--------
+
 #if __has_include(<opencv2/core.hpp>)
 #   include <opencv2/core.hpp>
 #elif __has_include(<opencv4/opencv2/core.hpp>)
@@ -47,7 +46,6 @@
 #   error "OpenCV core headers not found"
 #endif
 
-// -------- STL --------
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -68,7 +66,7 @@
 #include <limits>
 #include <array>
 
-// ÌáÉı¼ÆÊ±¾«¶È & Sleep ¾«¶È
+
 #include <mmsystem.h>
 #pragma comment(lib, "winmm.lib")
 
@@ -79,13 +77,13 @@ using namespace winrt;
 using namespace winrt::Windows::Graphics::Capture;
 using namespace winrt::Windows::Graphics::DirectX;
 
-// ÉùÃ÷ IDirect3DDxgiInterfaceAccess
+
 MIDL_INTERFACE("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")
 IDirect3DDxgiInterfaceAccess : public ::IUnknown{
     virtual HRESULT STDMETHODCALLTYPE GetInterface(REFIID iid, void** p) = 0;
 };
 
-// ======================= Ğ¡¹¤¾ß =======================
+
 static std::filesystem::path getExeDir() {
     wchar_t buf[MAX_PATH]{}; DWORD n = GetModuleFileNameW(nullptr, buf, MAX_PATH);
     return std::filesystem::path(std::wstring(buf, n)).parent_path();
@@ -109,7 +107,7 @@ static inline void toUpperInplace(std::string& s) {
         [](unsigned char c) { return (char)std::toupper(c); });
 }
 
-// ======================= DD =======================
+
 static const wchar_t* kDD_DLL_PATH = L"D:\\PythonCode\\BeatUp_YOLO_V8\\DD\\dd.54900\\dd.54900.dll";
 static CDD   g_dd;
 static bool  g_dd_ok = false;
@@ -127,12 +125,12 @@ static bool InitDD() {
         std::wcerr << L"[DD] Error: GetFunAddr -> " << ret << L"\n"; g_dd_ok = false; return false;
     }
 }
-// ¼æÈİ±£Áô£¨²»ÔÙÊ¹ÓÃ£©
+// å…¼å®¹ä¿ç•™ï¼ˆä¸å†ä½¿ç”¨ï¼‰
 static inline void DDPress(int ddcode, int down_ms = 10) {
     if (!g_dd_ok) return; g_dd.DD_key(ddcode, 1); if (down_ms > 0) ::Sleep(down_ms); g_dd.DD_key(ddcode, 2);
 }
 
-// ======================= Òì²½·¢¼üÆ÷£¨SPSC »·ĞÎ¶ÓÁĞ£© =======================
+
 class KeyTapSender {
 public:
     struct Tap { int code; int down_ms; };
@@ -158,7 +156,7 @@ public:
         size_t head = head_.load(std::memory_order_relaxed);
         size_t next = (head + 1) & MASK;
         if (next == tail_.load(std::memory_order_acquire)) {
-            // Âú£º¶ªÆú×î¾É£¬±ÜÃâ¶Ñ»ı
+            // æ»¡ï¼šä¸¢å¼ƒæœ€æ—§ï¼Œé¿å…å †ç§¯
             tail_.store((tail_.load(std::memory_order_relaxed) + 1) & MASK, std::memory_order_release);
         }
         buf_[head] = Tap{ code, down_ms };
@@ -212,7 +210,7 @@ private:
     bool started_{ false };
 };
 
-// ======================= D3D11 Éè±¸ =======================
+
 struct D3D11Pack {
     ID3D11Device* device = nullptr;
     ID3D11DeviceContext* context = nullptr;
@@ -233,7 +231,7 @@ static D3D11Pack CreateD3D11() {
     return r;
 }
 
-// ======================= WGC ²¶»ñ£¨CUDA¨CD3D11 »¥²Ù×÷£© =======================
+
 class WGCCapture {
 public:
     explicit WGCCapture(HWND hwnd) : hwnd_(hwnd) {}
@@ -243,7 +241,7 @@ public:
         if (!GraphicsCaptureSession::IsSupported()) { std::fprintf(stderr, "[WGC] Not supported\n"); return false; }
         d3d_ = CreateD3D11();
 
-        // CUDA Óë D3D11 °ó¶¨Í¬¿¨
+        // CUDA ä¸ D3D11 ç»‘å®šåŒå¡
         {
             winrt::com_ptr<IDXGIDevice> dxgiDevice;
             HRESULT hrQI = d3d_.device->QueryInterface(__uuidof(IDXGIDevice), dxgiDevice.put_void());
@@ -431,7 +429,7 @@ private:
     }
 };
 
-// ======================= YOLO + TensorRT =======================
+
 using namespace nvinfer1;
 #define CHECK_CUDA(x) do{ cudaError_t _e=(x); if(_e!=cudaSuccess){ \
     std::cerr<<"CUDA "<<cudaGetErrorString(_e)<<" @ "<<__FILE__<<":"<<__LINE__<<"\n"; std::exit(1);} }while(0)
@@ -462,7 +460,7 @@ public:
         ctx_.reset(engine_->createExecutionContext());
         if (!ctx_) { std::cerr << "createExecutionContext failed\n"; return false; }
 
-        // ÊäÈëÃû & ĞÎ×´
+
         int nIO = engine_->getNbIOTensors();
         for (int i = 0; i < nIO; ++i) {
             const char* nm = engine_->getIOTensorName(i);
@@ -471,7 +469,7 @@ public:
         }
         if (inName_.empty()) { std::cerr << "input tensor not found\n"; return false; }
 
-        // ¡ï È·ÈÏÊäÈëÊÇ FP16
+        // ç¡®è®¤è¾“å…¥æ˜¯ FP16
         nvinfer1::DataType inDT = engine_->getTensorDataType(inName_.c_str());
         if (inDT != nvinfer1::DataType::kHALF) {
             std::cerr << "[TRT] Engine input is not FP16. Found: " << (int)inDT << "\n";
@@ -490,7 +488,7 @@ public:
             }
         }
 
-        // NMS Êä³öÃû
+        // NMS è¾“å‡ºå
         for (int i = 0; i < nIO; ++i) {
             const char* nm = engine_->getIOTensorName(i);
             if (!nm) continue;
@@ -504,7 +502,7 @@ public:
         }
         hasNMS_ = (!outNum_.empty() && !outBoxes_.empty() && !outScores_.empty() && !outClasses_.empty());
 
-        // ·ÖÅäÊäÈë/Êä³ö
+        // åˆ†é…è¾“å…¥/è¾“å‡º
         CHECK_CUDA(cudaMalloc(&dIn_, sizeof(__half) * (size_t)N_ * C_ * H_ * W_));
         CHECK_CUDA(cudaStreamCreate(&stream_));
 
@@ -601,7 +599,7 @@ private:
 
     std::string inName_;
     int N_ = 1, C_ = 3, H_ = 640, W_ = 640;
-    void* dIn_ = nullptr;          // half ÊäÈë
+    void* dIn_ = nullptr;          // half è¾“å…¥
     cudaStream_t stream_ = nullptr;
 
     bool hasNMS_ = false;
@@ -611,8 +609,8 @@ private:
     int* hNum_ = nullptr; float* hBoxes_ = nullptr; float* hScores_ = nullptr; int* hCls_ = nullptr;
 };
 
-// ======================= Âß¼­²ÎÊı£¨¹Ì¶¨ÇøÓò£© =======================
-static const wchar_t* kWindowTitle = L"Beat World (È«ÍøBGPÏßÂ·£©";
+
+static const wchar_t* kWindowTitle = L"Beat World (å…¨ç½‘BGPçº¿è·¯ï¼‰";
 static const int LEFT_X = 395;
 static const int TOP_Y = 80;
 static const int WIDTH_MASK = 240;
@@ -621,7 +619,7 @@ static const int REGION_RIGHT = LEFT_X + WIDTH_MASK;
 static const int REGION_BOTTOM = TOP_Y + HEIGHT_MASK;
 static const int EXTRA_OFFSET = 67;
 
-// ·½Ïò±êÇ©
+// æ–¹å‘æ ‡ç­¾
 static const std::unordered_map<std::string, bool> LEFT_LABEL = {
     {"N7",true},{"N4",true},{"N1",true},{"N9",false},{"N6",false},{"N3",false}
 };
@@ -630,12 +628,12 @@ static inline std::string HalfMap(const std::string& raw, float cx, float midx) 
     else { if (raw == "N7")return "N9"; if (raw == "N4")return "N6"; if (raw == "N1")return "N3"; return raw; }
 }
 
-// DD ¼üÖµÓ³Éä
+// DD é”®å€¼æ˜ å°„
 static const std::unordered_map<std::string, int> KEY_MAP = {
     {"N7",807},{"N4",804},{"N1",801},{"N9",809},{"N6",806},{"N3",803}
 };
 
-// ======================= ãĞÖµÅäÖÃ£¨´ÓÎÄ¼ş¶ÁÈ¡£© =======================
+
 struct KeyThresholds {
     double N7{}, N4{}, N1{}, N9{}, N6{}, N3{}, SPACE{};
     int KEY_DOWN_MS{ 5 };
@@ -655,7 +653,7 @@ static bool parseDouble(const std::string& s, double& out) {
 static bool loadThresholdsFile(const std::filesystem::path& file, KeyThresholds& thr) {
     std::ifstream fin(file);
     if (!fin.is_open()) {
-        std::wcerr << L"[Config] ´ò²»¿ªãĞÖµÎÄ¼ş: " << file.wstring() << L"\n";
+        std::wcerr << L"[Config] æ‰“ä¸å¼€é˜ˆå€¼æ–‡ä»¶: " << file.wstring() << L"\n";
         return false;
     }
 
@@ -669,30 +667,30 @@ static bool loadThresholdsFile(const std::filesystem::path& file, KeyThresholds&
 
         size_t eq = s.find('=');
         if (eq == std::string::npos) {
-            std::cerr << "[Config] µÚ " << lineNo << " ĞĞÈ±ÉÙ '=' : " << line << "\n";
+            std::cerr << "[Config] ç¬¬ " << lineNo << " è¡Œç¼ºå°‘ '=' : " << line << "\n";
             return false;
         }
         std::string key = trim(s.substr(0, eq));
         std::string val = trim(s.substr(eq + 1));
         if (key.empty() || val.empty()) {
-            std::cerr << "[Config] µÚ " << lineNo << " ĞĞ¼ü»òÖµÎª¿Õ: " << line << "\n";
+            std::cerr << "[Config] ç¬¬ " << lineNo << " è¡Œé”®æˆ–å€¼ä¸ºç©º: " << line << "\n";
             return false;
         }
         toUpperInplace(key);
 
         double d = 0.0;
         if (!parseDouble(val, d)) {
-            std::cerr << "[Config] µÚ " << lineNo << " ĞĞ½âÎöÊıÖµÊ§°Ü: " << line << "\n";
+            std::cerr << "[Config] ç¬¬ " << lineNo << " è¡Œè§£ææ•°å€¼å¤±è´¥: " << line << "\n";
             return false;
         }
         kv[key] = d;
     }
 
-    // ±ØĞë°üº¬µÄ¼ü
+    // å¿…é¡»åŒ…å«çš„é”®
     const char* required[] = { "N7","N4","N1","N9","N6","N3","SPACE","KEY_DOWN_MS" };
     for (auto k : required) {
         if (!kv.count(k)) {
-            std::cerr << "[Config] È±ÉÙãĞÖµ¼ü: " << k << "\n";
+            std::cerr << "[Config] ç¼ºå°‘é˜ˆå€¼é”®: " << k << "\n";
             return false;
         }
     }
@@ -700,7 +698,7 @@ static bool loadThresholdsFile(const std::filesystem::path& file, KeyThresholds&
     thr.N7 = kv["N7"];  thr.N4 = kv["N4"];  thr.N1 = kv["N1"];
     thr.N9 = kv["N9"];  thr.N6 = kv["N6"];  thr.N3 = kv["N3"];
     thr.SPACE = kv["SPACE"];
-    // ¶Á KEY_DOWN_MS
+    // è¯» KEY_DOWN_MS
     thr.KEY_DOWN_MS = (int)std::lround(std::clamp(kv["KEY_DOWN_MS"], 1.0, 50.0));
 
     std::cout << std::fixed << std::setprecision(3)
@@ -728,7 +726,7 @@ static inline double getKeyThreshold(const KeyThresholds& t, const std::string& 
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-// ======================= Ö÷³ÌĞò =======================
+
 int wmain() {
     CUresult cuerr = cuInit(0);
     if (cuerr != CUDA_SUCCESS) {
@@ -739,15 +737,15 @@ int wmain() {
     if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
         SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
-    // ¶ÁÈ¡ãĞÖµÎÄ¼ş
+    // è¯»å–é˜ˆå€¼æ–‡ä»¶
     KeyThresholds THR{};
     auto thrPath = toExeDir("thresholds.txt");
     if (!loadThresholdsFile(thrPath, THR)) {
-        std::cerr << "[Main] ãĞÖµÅäÖÃ´íÎó£¬³ÌĞòÍË³ö¡£\n";
+        std::cerr << "[Main] é˜ˆå€¼é…ç½®é”™è¯¯ï¼Œç¨‹åºé€€å‡ºã€‚\n";
         return 5;
     }
 
-    // ÕÒ´°¿Ú
+    // æ‰¾çª—å£
     HWND hwnd = nullptr;
     {
         auto toLower = [](const std::wstring& s) { std::wstring t = s; for (auto& c : t) c = (wchar_t)towlower(c); return t; };
@@ -762,24 +760,24 @@ int wmain() {
             }, (LPARAM)&fd);
         hwnd = fd.exact ? fd.exact : fd.sub;
     }
-    if (!hwnd) { std::wcerr << L"[Main] ÕÒ²»µ½´°¿Ú: " << kWindowTitle << L"\n"; return 2; }
+    if (!hwnd) { std::wcerr << L"[Main] æ‰¾ä¸åˆ°çª—å£: " << kWindowTitle << L"\n"; return 2; }
 
-    // ³õÊ¼»¯ WGC
+    // åˆå§‹åŒ– WGC
     WGCCapture cap(hwnd);
-    if (!cap.init()) { std::cerr << "[Main] WGC ³õÊ¼»¯Ê§°Ü\n"; return 3; }
+    if (!cap.init()) { std::cerr << "[Main] WGC åˆå§‹åŒ–å¤±è´¥\n"; return 3; }
     cap.start();
 
-    // ³õÊ¼»¯ DD
+    // åˆå§‹åŒ– DD
     InitDD();
 
-    // Æô¶¯Òì²½·¢¼üÆ÷£¨´ÓÅäÖÃ¶ÁÈ¡Ê±³¤£©
+
     KeyTapSender keySender;
     keySender.start();
 
-    // ³õÊ¼»¯ TRT£¨FP16 ÊäÈë + EfficientNMS£©
+
     YoloTRT yolo;
     if (!yolo.init("best08201.engine")) {
-        std::cerr << "[Main] TensorRT ³õÊ¼»¯Ê§°Ü\n";
+        std::cerr << "[Main] TensorRT åˆå§‹åŒ–å¤±è´¥\n";
         cap.stop(); return 4;
     }
 
@@ -797,19 +795,17 @@ int wmain() {
             continue;
         }
 
-        // ROI£ºÏÂ°ëÆÁ + EXTRA_OFFSET
+
         int y_start = clampv(fullH / 2 + EXTRA_OFFSET, 0, std::max(0, fullH - 1));
         int roiX = 0, roiY = y_start, roiW = fullW, roiH = fullH - y_start;
         if (roiH <= 0) { cap.releaseCudaArray(bufIdx); continue; }
 
-        // letterbox ²ÎÊı£¨host ¶Ë¼ÆËã£©
         float s = std::min(yolo.inputW() / (float)roiW, yolo.inputH() / (float)roiH);
         int new_w = (int)std::round(roiW * s);
         int new_h = (int)std::round(roiH * s);
         int pad_x = (yolo.inputW() - new_w) / 2;
         int pad_y = (yolo.inputH() - new_h) / 2;
 
-        // °Ñ BGRA ÎÆÀíµÄ ROI letterbox µ½ half-CHW
         ppRunLetterboxFromCudaArray(
             arr, fullW, fullH,
             roiX, roiY, roiW, roiH,
@@ -821,11 +817,11 @@ int wmain() {
 
         cap.releaseCudaArray(bufIdx);
 
-        // ÍÆÀí + Ğ¡½á¹û»Ø¿½ + ½âÎö
+
         std::vector<Det> dets_roi;
         if (!yolo.enqueueAndCollect(0.25f, dets_roi, s, pad_x, pad_y, roiW, roiH)) continue;
 
-        // Ã¿Ãë´òÓ¡ÍÆÀíÖ¡ÂÊ
+
         infCount++;
         const double nowT = nowSec();
         if (nowT - tLastFPS >= 1.0) {
@@ -835,7 +831,7 @@ int wmain() {
             infCount = 0;
         }
 
-        // Ò»Ö¡ÄÚ¡°Ã¿¼üÖ»Ñ¡Ò»¸ö×î¼ÑºòÑ¡¡± + Òì²½·¢¼ü
+
         struct Cand { int ddcode; double thr; float cxg; float delta; };
         std::unordered_map<std::string, Cand> best;
 
@@ -853,7 +849,7 @@ int wmain() {
             std::string mapped = HalfMap(raw, cxg, (float)fullW * 0.5f);
             if (mapped == "SPACE") continue;
 
-            // ÆÁ±ÎÇø
+            // å±è”½åŒº
             if (cxg >= LEFT_X && cxg <= REGION_RIGHT && cyg >= TOP_Y && cyg <= REGION_BOTTOM) continue;
 
             auto itKey = KEY_MAP.find(mapped); if (itKey == KEY_MAP.end()) continue;
@@ -862,7 +858,7 @@ int wmain() {
             if (!std::isfinite(thr)) continue;
 
             float delta = isLeft ? (cxg - (float)thr) : ((float)thr - cxg);
-            if (delta < 0.f) continue; // »¹Ã»Ô½Ïß
+            if (delta < 0.f) continue; // è¿˜æ²¡è¶Šçº¿
 
             auto it = best.find(mapped);
             if (it == best.end() || delta < it->second.delta) {
@@ -874,7 +870,7 @@ int wmain() {
             const std::string& mapped = kv.first;
             const Cand& c = kv.second;
 
-            // È¥¶¶£º100ms
+            // å»æŠ–ï¼š50ms
             auto itLT = lastTrig.find(mapped);
             if (itLT != lastTrig.end() && (nowT - itLT->second < 0.05)) continue;
 
@@ -886,13 +882,11 @@ int wmain() {
                 std::cout << std::fixed << "[Trig] " << mapped
                     << " X=" << std::setprecision(1) << c.cxg
                     << " Thr=" << std::setprecision(1) << c.thr
-                    << " ¦¤=" << (signedDelta >= 0 ? "+" : "") << std::setprecision(1) << signedDelta
+                    << " Î”=" << (signedDelta >= 0 ? "+" : "") << std::setprecision(1) << signedDelta
                     << " |Q=" << keySender.depth()
                     << "\n";
             }
         }
     }
 
-    // Èç¹ûºóĞø¼ÓÍË³öÌõ¼ş£¬±ğÍüÁË£º
-    // keySender.stop();
 }   
