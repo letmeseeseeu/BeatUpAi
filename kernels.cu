@@ -36,13 +36,13 @@ __global__ void drawBoxesKernel(uchar4* img, int W, int H,
     if (i >= N) return;
     if (detScores[i] < scoreThresh) return;
 
-    // xyxy ÊÇ»ùÓÚ letterbox ºóµÄÍøÂçÊäÈë×ø±ê
+
     float x1 = detBoxes[i * 4 + 0];
     float y1 = detBoxes[i * 4 + 1];
     float x2 = detBoxes[i * 4 + 2];
     float y2 = detBoxes[i * 4 + 3];
 
-    // Äæ letterbox »ØÔ­´°¿Ú×ø±ê£¬ÔÙ¼Ó ROI Æ«ÒÆ
+    // é€† letterbox å›žåŽŸçª—å£åæ ‡ï¼Œå†åŠ  ROI åç§»
     int xi1 = clampi((int)llroundf((x1 - padX) / scale) + offX, 0, W - 1);
     int yi1 = clampi((int)llroundf((y1 - padY) / scale) + offY, 0, H - 1);
     int xi2 = clampi((int)llroundf((x2 - padX) / scale) + offX, 0, W - 1);
@@ -50,12 +50,12 @@ __global__ void drawBoxesKernel(uchar4* img, int W, int H,
     if (xi2 <= xi1 || yi2 <= yi1) return;
 
     uchar4 color = make_uchar4(0, 255, 0, 255);
-    // ¶¥/µ×±ß
+    // é¡¶/åº•è¾¹
     for (int x = xi1; x <= xi2; ++x) {
         img[yi1 * W + x] = color;
         img[yi2 * W + x] = color;
     }
-    // ×ó/ÓÒ±ß
+    // å·¦/å³è¾¹
     for (int y = yi1; y <= yi2; ++y) {
         img[y * W + xi1] = color;
         img[y * W + xi2] = color;
@@ -113,3 +113,4 @@ extern "C" void launchDrawRectKernel(uchar4* img, int imgWidth, int imgHeight,
     int x, int y, int w, int h, uchar4 color, cudaStream_t stream) {
     drawRectKernel << <1, 1, 0, stream >> > (img, imgWidth, imgHeight, x, y, w, h, color);
 }
+
