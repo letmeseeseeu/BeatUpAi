@@ -2,16 +2,17 @@
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 
-// ´Ó D3D11 ×¢²áÓ³ÉäµÃµ½µÄ cudaArray_t (BGRA8_UNORM) ×ö letterbox µ½ FP16 CHW (RGB, 0..1)
+
 extern "C" void ppRunLetterboxFromCudaArray(
-    cudaArray_t arr,           // Ô´ BGRA ÎÆÀíµÄ cudaArray
-    int srcW, int srcH,        // Ô´ÕûÍ¼³ß´ç£¨¼´ WGC Ö¡³ß´ç£©
-    int roiX, int roiY,        // ROI ×óÉÏ½Ç£¨ÔÚÕûÍ¼×ø±êÀï£©
-    int roiW, int roiH,        // ROI ¿í¸ß
-    __half* outCHW,            // Ä¿±êÊä³ö (FP16, CHW, RGB)
-    int dstW, int dstH,        // Ä¿±êÍøÂçÊäÈë³ß´ç (ÀıÈç 640x640)
-    float s,                   // letterbox Ëõ·ÅÒò×Ó
-    int pad_x, int pad_y,      // letterbox ×óÓÒ/ÉÏÏÂµÄ padding
-    int pad_114,               // 114£¨´« 114 ¼´¿É£©
-    cudaStream_t stream        // CUDA Á÷£¨ÓëÄã TensorRT µÄÁ÷Ò»ÖÂ£©
+    cudaArray_t arr,           // æº BGRA çº¹ç†çš„ cudaArray
+    int srcW, int srcH,        // æºæ•´å›¾å°ºå¯¸ï¼ˆå³ WGC å¸§å°ºå¯¸ï¼‰
+    int roiX, int roiY,        // ROI å·¦ä¸Šè§’ï¼ˆåœ¨æ•´å›¾åæ ‡é‡Œï¼‰
+    int roiW, int roiH,        // ROI å®½é«˜
+    __half* outCHW,            // ç›®æ ‡è¾“å‡º (FP16, CHW, RGB)
+    int dstW, int dstH,        // ç›®æ ‡ç½‘ç»œè¾“å…¥å°ºå¯¸ (ä¾‹å¦‚ 640x640)
+    float s,                   // letterbox ç¼©æ”¾å› å­
+    int pad_x, int pad_y,      // letterbox å·¦å³/ä¸Šä¸‹çš„ padding
+    int pad_114,               // 114
+    cudaStream_t stream        // CUDA æµ
 );
+
