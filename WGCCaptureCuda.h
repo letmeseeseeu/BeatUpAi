@@ -20,8 +20,8 @@
 #include <mutex>
 #include <atomic>
 
-// === ÔÚÕâÀïÌîĞ´Òª²¶»ñµÄ´°¿Ú±êÌâ£¨ºöÂÔ´óĞ¡Ğ´£© ===
-static const wchar_t* kWindowTitle = L"Beat World (È«ÍøBGPÏßÂ·£©";
+
+static const wchar_t* kWindowTitle = L"Beat World (å…¨ç½‘BGPçº¿è·¯ï¼‰";
 
 MIDL_INTERFACE("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")
 IDirect3DDxgiInterfaceAccess : public ::IUnknown{
@@ -38,7 +38,7 @@ public:
     void start();
     void stop();
 
-    // °Ñ×îĞÂÖ¡¿½µ½ GPU BGRA (CV_8UC4)£¬Òì²½ÔÚ¸ø¶¨ stream ÉÏ
+    // æŠŠæœ€æ–°å¸§æ‹·åˆ° GPU BGRA (CV_8UC4)ï¼Œå¼‚æ­¥åœ¨ç»™å®š stream ä¸Š
     bool blitToGpuBgra(cv::cuda::GpuMat& outBgra, cudaStream_t stream);
 
     int width() const { return size_.Width; }
@@ -77,3 +77,4 @@ private:
     bool running_ = false;
     bool gotFrame_ = false;
 };
+
